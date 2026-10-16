@@ -19,23 +19,15 @@ export const ResultsPanel: React.FC = () => {
   const esTests = useElectrostaticsStore((s) => s.verificationResults);
 
   const waveProp = useWaveStore((s) => s.propagation);
-  const waveParams = useWaveStore((s) => ({
-    freq: s.frequency,
-    amp: s.amplitude,
-    mat: s.material,
-    obsZ: s.observationZ,
-  }));
+  const waveObsZ = useWaveStore((s) => s.observationZ);
   const waveTests = useWaveStore((s) => s.verificationResults);
 
   const tlineRefl = useTransmissionLineStore((s) => s.reflectionResult);
   const tlineZin = useTransmissionLineStore((s) => s.inputImpedance);
-  const tlineParams = useTransmissionLineStore((s) => ({
-    Z0: s.characteristicImpedance,
-    RL: s.loadResistance,
-    XL: s.loadReactance,
-    length: s.lineLength,
-    obs: s.observationPosition,
-  }));
+  const tlineZ0 = useTransmissionLineStore((s) => s.characteristicImpedance);
+  const tlineRL = useTransmissionLineStore((s) => s.loadResistance);
+  const tlineXL = useTransmissionLineStore((s) => s.loadReactance);
+  const tlineObs = useTransmissionLineStore((s) => s.observationPosition);
   const tlineTests = useTransmissionLineStore((s) => s.verificationResults);
 
   const theory = theoryDatabase[activeModule];
@@ -249,7 +241,7 @@ export const ResultsPanel: React.FC = () => {
                 </div>
 
                 <div className="p-2.5 rounded bg-em-surface-light border border-em-border">
-                  <div className="readout-label">Obs. Amplitude |E({waveParams.obsZ.toFixed(2)}m)|</div>
+                  <div className="readout-label">Obs. Amplitude |E({waveObsZ.toFixed(2)}m)|</div>
                   <div className="readout text-base font-semibold mt-0.5">
                     {waveProp.amplitudeAtDistance.toFixed(3)}
                     <span className="readout-unit">V/m</span>
@@ -302,14 +294,14 @@ export const ResultsPanel: React.FC = () => {
                     <span className="readout-unit">Ω</span>
                   </div>
                   <div className="text-2xs text-em-text-muted mt-0.5">
-                    At d = {tlineParams.obs.toFixed(3)} m from load
+                    At d = {tlineObs.toFixed(3)} m from load
                   </div>
                 </div>
 
                 <div className="p-2.5 rounded bg-em-surface-light border border-em-border">
                   <div className="readout-label">Characteristic Z₀</div>
                   <div className="font-mono text-sm text-em-text-primary mt-0.5">
-                    {tlineParams.Z0} Ω
+                    {tlineZ0} Ω
                   </div>
                   <div className="text-2xs text-em-text-muted mt-0.5">
                     Line standard
@@ -319,7 +311,7 @@ export const ResultsPanel: React.FC = () => {
                 <div className="p-2.5 rounded bg-em-surface-light border border-em-border">
                   <div className="readout-label">Load Termination Z_L</div>
                   <div className="font-mono text-sm text-em-text-primary mt-0.5">
-                    {tlineParams.RL} {tlineParams.XL >= 0 ? '+' : '-'} j{Math.abs(tlineParams.XL)} Ω
+                    {tlineRL} {tlineXL >= 0 ? '+' : '-'} j{Math.abs(tlineXL)} Ω
                   </div>
                   <div className="text-2xs text-em-text-muted mt-0.5">
                     Termination state
