@@ -1,6 +1,6 @@
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useWaveStore } from '../../stores/waveStore';
 import { getEFieldComponents, getHFieldComponents } from '../../engine/wave/polarisation';
@@ -27,12 +27,10 @@ const WaveVectorField: React.FC = () => {
 
   // Sampling parameters along propagation z-axis
   const numSamples = 60;
-  const zMax = 2.0; // 2 meters visualization span
+  const zMax = 2.0;
 
   const alpha = propagation?.alpha ?? 0;
   const beta = propagation?.beta ?? (2 * Math.PI * frequency) / 3e8;
-  const etaMag = propagation?.intrinsicImpedance ? Math.hypot(propagation.intrinsicImpedance.real, propagation.intrinsicImpedance.imag) : 377;
-  const omega = 2 * Math.PI * frequency;
 
   // Reusable instanced lines/arrows
   const eArrows = useMemo(() => {
@@ -50,7 +48,6 @@ const WaveVectorField: React.FC = () => {
 
   useFrame((_, delta) => {
     if (isPlaying) {
-      // Scale time speed for visually intuitive wave motion
       timeRef.current += delta * animationSpeed * 2.5;
     }
 
@@ -58,9 +55,8 @@ const WaveVectorField: React.FC = () => {
 
     for (let i = 0; i < numSamples; i++) {
       const z = (i / (numSamples - 1)) * zMax;
-      // Visual spatial phase scale
-      const spatialBeta = (2 * Math.PI) / (0.8); // Visual wavelength normalized to 0.8m
-      const visualAlpha = Math.min(alpha * 0.05, 3.0); // Clamped attenuation for viewability
+      const spatialBeta = (2 * Math.PI) / 0.8;
+      const visualAlpha = Math.min(alpha * 0.05, 3.0);
 
       const { Ex, Ey } = getEFieldComponents(
         polarisation,
@@ -74,20 +70,12 @@ const WaveVectorField: React.FC = () => {
         visualAlpha
       );
 
-      const { Hx, Hy } = getHFieldComponents(Ex, Ey, 1.0); // Normalized visual H
+      const { Hx, Hy } = getHFieldComponents(Ex, Ey, 1.0);
 
-      // Update E-field vector (Cyan)
-      const ePoints = [
-        new THREE.Vector3(0, 0, z),
-        new THREE.Vector3(Ex, Ey, z),
-      ];
+      const ePoints = [new THREE.Vector3(0, 0, z), new THREE.Vector3(Ex, Ey, z)];
       eArrows[i].eLine.geometry.setFromPoints(ePoints);
 
-      // Update H-field vector (Amber)
-      const hPoints = [
-        new THREE.Vector3(0, 0, z),
-        new THREE.Vector3(Hx * 0.7, Hy * 0.7, z),
-      ];
+      const hPoints = [new THREE.Vector3(0, 0, z), new THREE.Vector3(Hx * 0.7, Hy * 0.7, z)];
       eArrows[i].hLine.geometry.setFromPoints(hPoints);
     }
   });
@@ -133,11 +121,6 @@ const WaveVectorField: React.FC = () => {
               0.08,
             ]}
           />
-          <Html position={[0, -0.15, 0]} center pointerEvents="none">
-            <div className="bg-em-surface/90 border border-em-success/40 px-1.5 py-0.5 rounded text-2xs font-mono text-em-success shadow whitespace-nowrap select-none">
-              Power Flow S = E × H (+z)
-            </div>
-          </Html>
         </group>
       )}
     </group>

@@ -1,11 +1,11 @@
 import React, { useRef, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useElectrostaticsStore } from '../../stores/electrostaticsStore';
 import { PointCharge } from '../../types/electrostatics';
 import { Vector3D } from '../../types/common';
-import { RotateCcw, Eye, Compass } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface ChargeSphereProps {
   charge: PointCharge;
@@ -44,23 +44,26 @@ const ChargeSphere: React.FC<ChargeSphereProps> = ({ charge, isSelected, onSelec
         />
       </mesh>
 
-      {/* Plus/Minus Sign Marker */}
-      <Html center position={[0, 0, 0]} pointerEvents="none">
-        <div
-          className={`w-4 h-4 rounded-full flex items-center justify-center font-bold text-xs select-none shadow pointer-events-none ${
-            isPositive ? 'text-white' : 'text-white'
-          }`}
-        >
-          {isPositive ? '+' : '−'}
-        </div>
-      </Html>
-
-      {/* Charge Label */}
-      <Html position={[0, 0.16, 0]} center pointerEvents="none">
-        <div className="bg-em-surface/90 border border-em-border px-1.5 py-0.5 rounded text-2xs font-mono text-em-text-primary whitespace-nowrap shadow select-none">
-          {charge.label || `${(charge.charge * 1e9).toFixed(1)} nC`}
-        </div>
-      </Html>
+      {/* 3D Plus/Minus Sign Marker */}
+      {isPositive ? (
+        <group position={[0, 0, 0.092]}>
+          <mesh>
+            <boxGeometry args={[0.05, 0.012, 0.005]} />
+            <meshBasicMaterial color="#FFFFFF" />
+          </mesh>
+          <mesh>
+            <boxGeometry args={[0.012, 0.05, 0.005]} />
+            <meshBasicMaterial color="#FFFFFF" />
+          </mesh>
+        </group>
+      ) : (
+        <group position={[0, 0, 0.092]}>
+          <mesh>
+            <boxGeometry args={[0.05, 0.012, 0.005]} />
+            <meshBasicMaterial color="#FFFFFF" />
+          </mesh>
+        </group>
+      )}
     </group>
   );
 };
@@ -104,18 +107,17 @@ const ObservationProbe: React.FC<{ point: Vector3D }> = ({ point }) => {
   return (
     <group position={[point.x, point.y, point.z]}>
       <mesh>
-        <sphereGeometry args={[0.045, 16, 16]} />
+        <sphereGeometry args={[0.05, 16, 16]} />
         <meshStandardMaterial
           color="#D4A843"
           emissive="#D4A843"
-          emissiveIntensity={0.5}
+          emissiveIntensity={0.6}
         />
       </mesh>
-      <Html position={[0, 0.1, 0]} center pointerEvents="none">
-        <div className="bg-em-surface/95 border border-em-warning/50 px-1.5 py-0.5 rounded text-2xs font-mono text-em-warning whitespace-nowrap shadow select-none">
-          Probe r
-        </div>
-      </Html>
+      <mesh>
+        <ringGeometry args={[0.07, 0.08, 24]} />
+        <meshBasicMaterial color="#D4A843" side={THREE.DoubleSide} />
+      </mesh>
     </group>
   );
 };
@@ -131,7 +133,6 @@ const PotentialPlaneOverlay: React.FC = () => {
     const height = yValues.length;
 
     const data = new Uint8Array(width * height * 4);
-    // Find min and max for scaling
     let maxAbs = 1;
     for (let j = 0; j < height; j++) {
       for (let i = 0; i < width; i++) {
@@ -139,7 +140,6 @@ const PotentialPlaneOverlay: React.FC = () => {
         if (val > maxAbs) maxAbs = val;
       }
     }
-    // Limit dynamic range for visual clarity
     maxAbs = Math.min(maxAbs, 150);
 
     for (let j = 0; j < height; j++) {
@@ -149,13 +149,11 @@ const PotentialPlaneOverlay: React.FC = () => {
         const normalized = Math.max(-1, Math.min(1, v / maxAbs));
 
         if (normalized >= 0) {
-          // Positive potential: soft warm coral / red
           data[idx] = Math.round(229 * normalized);
           data[idx + 1] = Math.round(115 * normalized);
           data[idx + 2] = Math.round(115 * normalized);
           data[idx + 3] = Math.round(80 * Math.sqrt(normalized));
         } else {
-          // Negative potential: soft cool blue
           const negNorm = Math.abs(normalized);
           data[idx] = Math.round(100 * negNorm);
           data[idx + 1] = Math.round(181 * negNorm);

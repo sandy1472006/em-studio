@@ -8,6 +8,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      window.addEventListener('error', function(e) {
+        var errEl = document.getElementById('global-startup-error');
+        if (!errEl) {
+          errEl = document.createElement('div');
+          errEl.id = 'global-startup-error';
+          errEl.style = 'position:fixed;top:0;left:0;width:100%;background:#e53e3e;color:white;padding:16px;z-index:999999;font-family:monospace;font-size:12px;white-space:pre-wrap;';
+          document.body.appendChild(errEl);
+        }
+        errEl.textContent += 'Runtime Error: ' + e.message + '\nFile: ' + e.filename + ':' + e.lineno + '\n\n';
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
