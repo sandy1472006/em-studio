@@ -1,0 +1,174 @@
+@import "katex/dist/katex.min.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0D1117;
+  color: #E7EDF5;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141B24;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #283341;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #354559;
+}
+
+/* Input styling */
+input[type="number"],
+input[type="text"],
+select {
+  background-color: #1C2533;
+  border: 1px solid #283341;
+  color: #E7EDF5;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8125rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+  border-color: #55C8DD;
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+  opacity: 0.5;
+}
+
+/* Slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #283341;
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #55C8DD;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #141B24;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #6DD4E7;
+}
+
+/* Button base */
+.btn {
+  @apply px-3 py-1.5 rounded text-sm font-medium transition-colors duration-150 cursor-pointer;
+  @apply border border-em-border;
+}
+
+.btn-primary {
+  @apply bg-em-accent text-em-bg border-em-accent;
+  @apply hover:bg-em-accent-hover;
+}
+
+.btn-secondary {
+  @apply bg-em-surface text-em-text-secondary;
+  @apply hover:bg-em-surface-light hover:text-em-text-primary;
+}
+
+.btn-ghost {
+  @apply bg-transparent text-em-text-secondary border-transparent;
+  @apply hover:bg-em-surface-light hover:text-em-text-primary;
+}
+
+.btn-sm {
+  @apply px-2 py-1 text-xs;
+}
+
+.btn-icon {
+  @apply p-1.5 rounded;
+}
+
+/* Panel styling */
+.panel {
+  @apply bg-em-surface border border-em-border rounded-lg;
+}
+
+.panel-header {
+  @apply px-3 py-2 border-b border-em-border text-xs font-semibold text-em-text-secondary uppercase tracking-wider;
+}
+
+/* Monospace readout */
+.readout {
+  @apply font-mono text-sm text-em-accent tabular-nums;
+}
+
+.readout-label {
+  @apply text-xs text-em-text-secondary font-medium;
+}
+
+.readout-unit {
+  @apply text-xs text-em-text-muted ml-1;
+}
+
+/* Collapsible sections */
+.collapse-header {
+  @apply flex items-center justify-between cursor-pointer py-1.5 px-2 rounded text-xs font-medium text-em-text-secondary;
+  @apply hover:bg-em-surface-light hover:text-em-text-primary transition-colors;
+}
+
+/* Plotly overrides for dark theme */
+.js-plotly-plot .plotly .modebar {
+  right: 4px !important;
+  top: 4px !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn {
+  font-size: 14px !important;
+}
+
+/* KaTeX overrides */
+.katex {
+  font-size: 0.95em !important;
+}
+
+.katex-display {
+  margin: 0.5em 0 !important;
+}
+
+/* Tab styling */
+.tab {
+  @apply px-3 py-1.5 text-xs font-medium text-em-text-secondary cursor-pointer border-b-2 border-transparent;
+  @apply hover:text-em-text-primary transition-colors;
+}
+
+.tab-active {
+  @apply text-em-accent border-em-accent;
+}
