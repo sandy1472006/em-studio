@@ -3,7 +3,11 @@ import { useAppStore } from '../../stores/appStore';
 import { useElectrostaticsStore } from '../../stores/electrostaticsStore';
 import { useWaveStore } from '../../stores/waveStore';
 import { useTransmissionLineStore } from '../../stores/transmissionLineStore';
-import { Play, Pause, RotateCcw, Settings, FileText, HelpCircle, Layers } from 'lucide-react';
+import { electrostaticsPresets } from '../../engine/electrostatics/presets';
+import { wavePresets } from '../../engine/wave/materials';
+import { transmissionLinePresets } from '../../engine/transmissionLine/presets';
+import { ModuleId } from '../../types/common';
+import { Play, Pause, RotateCcw, Settings, HelpCircle, Camera } from 'lucide-react';
 
 interface TopBarProps {
   onOpenReport: () => void;
@@ -16,21 +20,24 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenSettings,
   onOpenTutor,
 }) => {
-  const { activeModule, experimentName } = useAppStore();
-  
-  // Wave & TLine playback states
+  const { activeModule, setActiveModule, experimentName, setExperimentName } = useAppStore();
+
   const waveIsPlaying = useWaveStore((s) => s.isPlaying);
   const setWavePlaying = useWaveStore((s) => s.setIsPlaying);
-  const resetWave = useWaveStore((s) => s.reset);
 
   const tlineIsPlaying = useTransmissionLineStore((s) => s.isPlaying);
   const setTLinePlaying = useTransmissionLineStore((s) => s.setIsPlaying);
-  const resetTLine = useTransmissionLineStore((s) => s.reset);
 
-  const resetElectrostatics = useElectrostaticsStore((s) => s.reset);
+  const loadEsPreset = useElectrostaticsStore((s) => s.loadPreset);
+  const loadWavePreset = useWaveStore((s) => s.loadPreset);
+  const loadTlPreset = useTransmissionLineStore((s) => s.loadPreset);
 
-  const isTimeDependent = activeModule !== 'electrostatics';
-  const isPlaying = activeModule === 'wave-propagation' ? waveIsPlaying : tlineIsPlaying;
+  const isPlaying =
+    activeModule === 'electrostatics'
+      ? true
+      : activeModule === 'wave-propagation'
+      ? waveIsPlaying
+      : tlineIsPlaying;
 
   const handleTogglePlay = () => {
     if (activeModule === 'wave-propagation') {
@@ -40,126 +47,117 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
   };
 
-  const handleReset = () => {
-    if (activeModule === 'electrostatics') {
-      resetElectrostatics();
-    } else if (activeModule === 'wave-propagation') {
-      resetWave();
-    } else if (activeModule === 'transmission-line') {
-      resetTLine();
+  const currentPresets = {
+    'electrostatics': electrostaticsPresets,
+    'wave-propagation': wavePresets,
+    'transmission-line': transmissionLinePresets,
+  }[activeModule];
+
+  const handlePresetChange = (presetId: string) => {
+    const found = currentPresets.find((p) => p.id === presetId);
+    if (found) {
+      setExperimentName(found.name);
+      if (activeModule === 'electrostatics') {
+        loadEsPreset(found.id);
+      } else if (activeModule === 'wave-propagation') {
+        loadWavePreset(found.id);
+      } else if (activeModule === 'transmission-line') {
+        loadTlPreset(found.id);
+      }
     }
   };
 
-  const moduleNames = {
-    'electrostatics': 'Electrostatics Laboratory',
-    'wave-propagation': 'Wave Propagation Laboratory',
-    'transmission-line': 'Transmission Line Laboratory',
+  const handleCaptureScreen = () => {
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `em-studio-${activeModule}-capture.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   return (
-    <header className="h-12 border-b border-em-border bg-em-surface flex items-center justify-between px-4 select-none shrink-0 z-30">
-      {/* Brand & Wordmark */}
+    <header className="h-14 border-b border-[#1E293B] bg-[#070A0F] flex items-center justify-between px-5 select-none shrink-0 z-30">
+      {/* 1. Left Brand Title & Subtitle */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded bg-em-accent/15 border border-em-accent/40 flex items-center justify-center">
-            <span className="text-em-accent font-mono font-bold text-xs">EM</span>
-          </div>
-          <span className="font-semibold text-sm tracking-tight text-em-text-primary">
-            EM Studio
-          </span>
+        <div className="flex items-center gap-1.5 font-bold tracking-tight text-base">
+          <span className="text-[#00E5FF] drop-shadow-[0_0_10px_rgba(0,229,255,0.4)]">EM</span>
+          <span className="text-white">Studio</span>
         </div>
-        <span className="text-em-border">/</span>
-        <div className="flex items-baseline gap-2">
-          <span className="text-xs font-medium text-em-accent">
-            {moduleNames[activeModule]}
-          </span>
-          <span className="text-2xs text-em-text-muted hidden md:inline">
-            • {experimentName}
-          </span>
-        </div>
+        <span className="text-[#334155] font-light text-sm">|</span>
+        <span className="text-xs text-[#94A3B8] font-normal tracking-wide hidden sm:inline">
+          Interactive Electromagnetic Laboratory
+        </span>
       </div>
 
-      {/* Center Controls (Simulation Execution) */}
-      <div className="flex items-center gap-2">
-        {isTimeDependent ? (
-          <div className="flex items-center gap-1.5 bg-em-surface-light px-2 py-1 rounded border border-em-border">
-            <button
-              onClick={handleTogglePlay}
-              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded font-medium text-em-text-primary hover:bg-em-border transition-colors cursor-pointer"
-              title={isPlaying ? 'Pause Simulation' : 'Run Simulation'}
-            >
-              {isPlaying ? (
-                <>
-                  <Pause className="w-3.5 h-3.5 text-em-accent" />
-                  <span>Pause</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5 text-em-accent fill-em-accent" />
-                  <span>Play</span>
-                </>
-              )}
-            </button>
-            <div className="h-3 w-px bg-em-border" />
-            <button
-              onClick={handleReset}
-              className="p-1 rounded text-em-text-secondary hover:text-em-text-primary hover:bg-em-border transition-colors cursor-pointer"
-              title="Reset Parameters"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-            <div className="flex items-center gap-1.5 pl-1.5 border-l border-em-border">
-              <span className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-em-success animate-pulse' : 'bg-em-warning'}`} />
-              <span className="text-2xs font-mono text-em-text-muted">
-                {isPlaying ? 'RUNNING' : 'PAUSED'}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 bg-em-surface-light px-2.5 py-1 rounded border border-em-border">
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-em-text-secondary hover:text-em-text-primary hover:bg-em-border transition-colors cursor-pointer"
-              title="Reset Charges to Dipole"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
-            </button>
-            <div className="flex items-center gap-1.5 pl-1.5 border-l border-em-border">
-              <span className="w-1.5 h-1.5 rounded-full bg-em-success" />
-              <span className="text-2xs font-mono text-em-text-muted">SOLVER READY</span>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* 2. Center / Right Navigation Selectors & Simulation Status */}
+      <div className="flex items-center gap-3">
+        {/* Module Selector Dropdown */}
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-[#64748B] text-2xs uppercase tracking-wider font-medium">Module:</span>
+          <select
+            value={activeModule}
+            onChange={(e) => setActiveModule(e.target.value as ModuleId)}
+            className="bg-[#0E1522] border border-[#1E293B] hover:border-[#334155] rounded-md px-2.5 py-1 text-xs text-white focus:outline-none focus:border-em-accent transition-colors cursor-pointer"
+          >
+            <option value="electrostatics">Electrostatics</option>
+            <option value="wave-propagation">Wave Propagation</option>
+            <option value="transmission-line">Transmission Lines</option>
+          </select>
+        </div>
 
-      {/* Right Utilities */}
-      <div className="flex items-center gap-1">
+        {/* Experiment Selector Dropdown */}
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-[#64748B] text-2xs uppercase tracking-wider font-medium">Experiment:</span>
+          <select
+            value={currentPresets.find((p) => p.name === experimentName)?.id ?? currentPresets[0]?.id}
+            onChange={(e) => handlePresetChange(e.target.value)}
+            className="bg-[#0E1522] border border-[#1E293B] hover:border-[#334155] rounded-md px-2.5 py-1 text-xs text-white focus:outline-none focus:border-em-accent transition-colors cursor-pointer max-w-[150px] truncate"
+          >
+            {currentPresets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Simulation Execution Status Pill */}
         <button
-          onClick={onOpenTutor}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded font-medium text-em-accent bg-em-accent/10 border border-em-accent/30 hover:bg-em-accent/20 transition-colors cursor-pointer"
-          title="AI Physics Tutor & Theory Assistant"
+          onClick={handleTogglePlay}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0E1522] border border-[#1E293B] hover:border-[#334155] transition-all cursor-pointer shadow-xs"
+          title="Toggle Simulation Run / Pause"
         >
-          <HelpCircle className="w-3.5 h-3.5" />
-          <span>Physics Tutor</span>
+          <div className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981] animate-pulse" />
+          <span className="text-2xs font-semibold text-white tracking-wide">
+            {isPlaying ? 'Running' : 'Paused'}
+          </span>
         </button>
 
-        <button
-          onClick={onOpenReport}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded font-medium text-em-text-secondary hover:text-em-text-primary hover:bg-em-surface-light border border-em-border transition-colors cursor-pointer"
-          title="Generate Engineering Laboratory Report"
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Lab Report</span>
-        </button>
-
-        <button
-          onClick={onOpenSettings}
-          className="p-1.5 rounded text-em-text-secondary hover:text-em-text-primary hover:bg-em-surface-light border border-transparent hover:border-em-border transition-colors cursor-pointer"
-          title="Application Settings"
-        >
-          <Settings className="w-3.5 h-3.5" />
-        </button>
+        {/* Header Action Icons */}
+        <div className="flex items-center gap-1 border-l border-[#1E293B] pl-2">
+          <button
+            onClick={handleCaptureScreen}
+            className="p-1.5 rounded-md text-[#94A3B8] hover:text-white hover:bg-[#1E293B] transition-colors cursor-pointer"
+            title="Snapshot Canvas"
+          >
+            <Camera className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onOpenSettings}
+            className="p-1.5 rounded-md text-[#94A3B8] hover:text-white hover:bg-[#1E293B] transition-colors cursor-pointer"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onOpenTutor}
+            className="p-1.5 rounded-md text-[#94A3B8] hover:text-white hover:bg-[#1E293B] transition-colors cursor-pointer"
+            title="AI Physics Tutor & Guide"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </header>
   );

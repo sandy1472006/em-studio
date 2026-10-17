@@ -19,6 +19,7 @@ const defaultCharges: PointCharge[] = [
 const defaultObservationPoint: Vector3D = { x: 0, y: 0.8, z: 0 };
 
 export const useElectrostaticsStore = create<ElectrostaticsState>((set, get) => ({
+  fieldType: 'electric',
   charges: defaultCharges,
   observationPoint: defaultObservationPoint,
   relativePermittivity: 1.0,
@@ -169,6 +170,13 @@ export const useElectrostaticsStore = create<ElectrostaticsState>((set, get) => 
       viewMode: 'combined',
       selectedChargeId: 'q1',
     });
+    get().computeField();
+    get().computeFieldLines();
+    get().computePotentialMap();
+  },
+
+  setFieldType: (type) => {
+    set({ fieldType: type });
     get().computeField();
     get().computeFieldLines();
     get().computePotentialMap();

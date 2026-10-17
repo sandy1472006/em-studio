@@ -127,35 +127,100 @@ export function traceFieldLine(
   return line;
 }
 
+export interface FieldArrow {
+  position: Vector3D;
+  tangent: Vector3D;
+  magnitude: number;
+}
+
 /**
- * Generate all field lines for a set of charges.
- * Lines originate from positive charges (outward) and terminate at negative charges.
+ * Extract directional arrow markers along each field line.
+ * Places arrows at ~40% and/or ~70% along long lines for clean visualization.
  */
-export function generateFieldLines(
-  charges: PointCharge[],
-  linesPerCharge: number = 12,
-  config: FieldLineConfig = {}
-): FieldLine[] {
-  const lines: FieldLine[] = [];
-  
-  for (const charge of charges) {
-    if (Math.abs(charge.charge) < 1e-30) continue;
-    
-    // Field lines start from positive charges going outward
-    // and from negative charges going inward (traced backward)
-    const direction = charge.charge > 0 ? 1 : -1;
-    const scaledCount = Math.max(4, Math.round(linesPerCharge * Math.sqrt(Math.abs(charge.charge) / 1e-9)));
-    const actualCount = Math.min(scaledCount, 24); // cap at 24 lines per charge
-    
-    const seeds = generateSeedPoints(charge, actualCount);
-    
-    for (const seed of seeds) {
-      const line = traceFieldLine(seed, charges, direction, config);
-      if (line.length > 2) {
-        lines.push(line);
+export function extractFieldLineArrows(lines: FieldLine[]): FieldArrow[] {
+  const arrows: FieldArrow[] = [];
+
+  for (const line of lines) {
+    if (line.length < 10) continue;
+
+    // Pick 1 or 2 spots along line (avoiding extreme ends near charges)
+    const indices = line.length > 35 
+      ? [Math.floor(line.length * 0.35), Math.floor(line.length * 0.70)]
+      : [Math.floor(line.length * 0.5)];
+
+    for (const idx of indices) {
+      const p1 = line[Math.max(0, idx - 2)].position;
+      const p2 = line[Math.min(line.length - 1, idx + 2)].position;
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dz = p2.z - p1.z;
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (len > 1e-6) {
+        arrows.push({
+          position: line[idx].position,
+          tangent: { x: dx / len, y: dy / len, z: dz / len },
+          magnitude: line[idx].fieldMagnitude,
+        });
       }
     }
   }
-  
+
+  return arrows;
+}
+
+/**
+ * Generate all field lines for a set of charges.
+ * Prioritizes positive charges to avoid duplicate overlapping lines.
+ */
+export function generateFieldLines(
+  charges: PointCharge[],
+  linesPerCharge: number = 16,
+  config: FieldLineConfig = {}
+): FieldLine[] {
+  const lines: FieldLine[] = [];
+  if (charges.length === 0) return lines;
+
+  const posCharges = charges.filter((c) => c.charge > 0);
+  const negCharges = charges.filter((c) => c.charge < 0);
+
+  // If positive charges exist, trace outward from them
+  if (posCharges.length > 0) {
+    for (const charge of posCharges) {
+      const scaledCount = Math.max(8, Math.min(24, Math.round(linesPerCharge * Math.sqrt(Math.abs(charge.charge) / 1e-9))));
+      const seeds = generateSeedPoints(charge, scaledCount);
+      for (const seed of seeds) {
+        const line = traceFieldLine(seed, charges, 1, config);
+        if (line.length > 3) {
+          lines.push(line);
+        }
+      }
+    }
+
+    // Only add negative charge seeds if they are isolated or far from positive charges
+    if (posCharges.length === 0 || negCharges.length > posCharges.length) {
+      for (const charge of negCharges) {
+        const seeds = generateSeedPoints(charge, Math.round(linesPerCharge * 0.75));
+        for (const seed of seeds) {
+          const line = traceFieldLine(seed, charges, -1, config);
+          if (line.length > 3) {
+            lines.push(line);
+          }
+        }
+      }
+    }
+  } else {
+    // Only negative charges: trace inward toward them (backward direction)
+    for (const charge of negCharges) {
+      const scaledCount = Math.max(8, Math.min(24, Math.round(linesPerCharge * Math.sqrt(Math.abs(charge.charge) / 1e-9))));
+      const seeds = generateSeedPoints(charge, scaledCount);
+      for (const seed of seeds) {
+        const line = traceFieldLine(seed, charges, -1, config);
+        if (line.length > 3) {
+          lines.push(line);
+        }
+      }
+    }
+  }
+
   return lines;
 }

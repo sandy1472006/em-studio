@@ -8,6 +8,7 @@ export interface PointCharge {
 }
 
 export interface ElectrostaticsParams {
+  fieldType?: 'electric' | 'magnetic';
   charges: PointCharge[];
   observationPoint: Vector3D;
   relativePermittivity: number;
@@ -24,7 +25,7 @@ export interface ElectrostaticsParams {
   potentialMapZ: number; // z-coordinate for xy plane slice
 }
 
-export type ElectrostaticsViewMode = 'field-lines' | 'field-vectors' | 'potential-map' | 'combined';
+export type ElectrostaticsViewMode = 'field-lines' | 'field-vectors' | 'potential-map' | 'equipotential' | 'combined';
 
 export interface FieldLinePoint {
   position: Vector3D;
@@ -98,6 +99,7 @@ export interface ElectrostaticsState extends ElectrostaticsParams {
   computePotentialMap: () => void;
   solveLaplace: () => void;
   runVerification: () => void;
+  setFieldType?: (type: 'electric' | 'magnetic') => void;
   loadPreset: (presetId: string) => void;
   reset: () => void;
   setShowGrid: (show: boolean) => void;

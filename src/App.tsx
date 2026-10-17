@@ -36,6 +36,8 @@ export const App: React.FC = () => {
         <Sidebar
           onOpenExperiments={() => setIsExperimentsOpen(true)}
           onOpenTheory={() => setIsTheoryOpen(true)}
+          onOpenTutor={() => setIsTutorOpen(true)}
+          onOpenReport={() => setIsReportOpen(true)}
         />
 
         {/* Central Scientific Laboratory Canvas & Controls */}
